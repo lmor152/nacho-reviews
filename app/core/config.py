@@ -10,5 +10,3 @@ class Settings:
     page_title = "Nachos"
     page_icon = "🌮"
     layout = "wide"
-    mapbox_token = os.getenv("MAPBOX_TOKEN")
-    mapbox_style = "mapbox://styles/liammorriskpmg/cm3try6w4006901sr253scyvq"

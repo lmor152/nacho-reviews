@@ -3,13 +3,8 @@ from dotenv import load_dotenv
 
 _ = load_dotenv()
 
-st.set_page_config(
-    page_title="Nachos",
-    page_icon="🌮",
-    layout="wide",
-)
 
-st.title("📋 Scoring Guide")
+st.title("📈 Scoring Guide")
 
 score_definitons = """
 | Score Category | Score Description |

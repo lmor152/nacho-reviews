@@ -5,12 +5,6 @@ import streamlit as st
 
 from app.database import NachosDB, get_place_candidates
 
-st.set_page_config(
-    page_title="Nachos",
-    page_icon="🌮",
-    layout="wide",
-)
-
 # Initialize database
 db = NachosDB()
 
@@ -69,6 +63,10 @@ def select_candidate(candidates):
             f"{i+1}. {c['displayName']['text']} ({c['formattedAddress']})"
             for i, c in enumerate(candidates)
         ],
+    )
+
+    st.markdown(
+        "**If your place is not listed, please close this popup and enter the name from Google Maps and try again.**"
     )
 
     chosen_index = int(chosen.split(".")[0]) - 1

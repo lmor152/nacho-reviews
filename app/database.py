@@ -25,13 +25,18 @@ class NachosDB:
 
     def get_approved_reviews(self):
         """Get all approved reviews as a pandas DataFrame"""
-        return pd.DataFrame(
-            [doc.to_dict() for doc in self.approved_collection.stream()]
-        )
+        df = pd.DataFrame([doc.to_dict() for doc in self.approved_collection.stream()])
+
+        df["date"] = pd.to_datetime(df["date"]).dt.date
+        return df
 
     def get_pending_reviews(self):
         """Get all pending reviews as a pandas DataFrame"""
-        return pd.DataFrame([doc.to_dict() for doc in self.pending_collection.stream()])
+        df = pd.DataFrame([doc.to_dict() for doc in self.pending_collection.stream()])
+
+        if "date" in df.columns:
+            df["date"] = pd.to_datetime(df["date"]).dt.date
+        return df
 
 
 def get_place_candidates(place_text):

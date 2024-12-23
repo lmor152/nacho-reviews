@@ -7,12 +7,6 @@ from app.database import NachosDB
 
 _ = load_dotenv()
 
-st.set_page_config(
-    page_title="Nachos",
-    page_icon="🌮",
-    layout="wide",
-)
-
 
 # Initialize database
 db = NachosDB()

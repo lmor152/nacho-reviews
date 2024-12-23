@@ -2,13 +2,6 @@ import streamlit as st
 
 from app.database import NachosDB
 
-st.set_page_config(
-    page_title="Nachos",
-    page_icon="🌮",
-    layout="wide",
-)
-
-
 db = NachosDB()
 df = db.get_approved_reviews()
 
@@ -42,5 +35,6 @@ df = df.rename(
         "date": "Date",
     },
 )
+
 
 st.dataframe(df, use_container_width=True, hide_index=True)
