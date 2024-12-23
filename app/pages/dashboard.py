@@ -119,13 +119,15 @@ df_heatmap["emoji_column"] = df_heatmap[0].apply(set_emoji)
 
 df_heatmap.columns = ["weeks_ago", "day_of_week", "count", "emoji_column"]
 
+hover_data = {x: False for x in df_heatmap.columns}
+hover_data["count"] = True
 fig_heatmap = px.scatter(
     df_heatmap,
     x="weeks_ago",
     y="day_of_week",
     text="emoji_column",
     labels={"weeks_ago": "", "day_of_week": ""},
-    hover_data={x: False for x in df_heatmap.columns},
+    hover_data=hover_data,
 )
 
 fig_heatmap.update_traces(
