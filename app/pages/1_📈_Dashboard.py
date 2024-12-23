@@ -5,8 +5,6 @@ from visuals.map import make_map
 
 # Initialize database
 
-db = NachosDB()
-df = db.get_all_reviews()
 
 st.set_page_config(
     page_title="Nachos",
@@ -14,8 +12,8 @@ st.set_page_config(
     layout="wide",
 )
 
-st.title("Nachos Reviews Dashboard")
-
+db = NachosDB()
+df = db.get_approved_reviews()
 
 with st.sidebar:
     st.title("Filters")
