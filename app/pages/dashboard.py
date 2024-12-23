@@ -109,8 +109,10 @@ df_heatmap = complete_grid.merge(
 def set_emoji(x):
     if x == 0:
         return "⬜️"
-    else:
+    elif x == 1:
         return "🟨"
+    else:
+        return "🟧"
 
 
 df_heatmap["emoji_column"] = df_heatmap[0].apply(set_emoji)
