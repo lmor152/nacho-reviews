@@ -25,16 +25,14 @@ with col1:
 
     with subcol1:
         st.metric("Total Reviews", len(df), border=True)
-        st.metric("Average Price", f"${df['price'].mean():.2f}", border=True)
+        st.metric("Total Spent", f"${df['price'].sum():.2f}", border=True)
+        st.metric("Cheapest Dish", f"${df['price'].min():.2f}", border=True)
     with subcol2:
         st.metric(
             "Average Overall Score", f"{df['overall_score'].mean():.1f}/10", border=True
         )
-        st.metric(
-            "Best Rated Place",
-            df.loc[df["overall_score"].idxmax()]["name"],
-            border=True,
-        )
+        st.metric("Average Price", f"${df['price'].mean():.2f}", border=True)
+        st.metric("Most Expensive Dish", f"${df['price'].max():.2f}", border=True)
 
 
 with col2:
@@ -67,7 +65,7 @@ with col3:
     fig_scores = px.box(
         df,
         y=["quantity_score", "taste_score", "atmosphere_score", "overall_score"],
-        title="Score Distribution",
+        title="Score Distributions",
         labels={
             "variable": "",
             "value": "",
