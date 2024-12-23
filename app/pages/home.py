@@ -12,7 +12,7 @@ My favourite food is nachos, and I created this site to track all the places my 
 
 So far we have:
 - **{len(df)}** reviews from **{df['reviewer'].nunique()}** reviewers
-- **{df['meal'].nunique()}** different meals from **{df['name'].nunique()}** places
+- **{(df['meal']+df['name']).nunique()}** different meals from **{df['name'].nunique()}** places
 - Spent a total of **${df['price'].sum():.2f}** on nachos
 
 Feel free to explore the site and add your own reviews! We have the following pages:
