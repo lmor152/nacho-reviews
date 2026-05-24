@@ -1,0 +1,22 @@
+node_modules
+.next
+.git
+.gitignore
+.dockerignore
+Dockerfile
+README.md
+.env*
+!.env.example
+
+# OS / editor cruft
+.DS_Store
+.idea
+.vscode
+*.iml
+
+# Local data file (the JSON-fallback "database")
+data/reviews.json
+
+# CI / coverage
+coverage
+.nyc_output

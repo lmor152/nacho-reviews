@@ -1,7 +1,0 @@
-streamlit
-plotly
-pandas
-google-cloud-firestore
-python-dotenv
-
-
