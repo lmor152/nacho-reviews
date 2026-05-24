@@ -140,6 +140,11 @@ export function ReviewerPicker({ value, onChange }: ReviewerPickerProps) {
       <p className="mono text-[10px] uppercase tracking-[0.22em] text-[var(--color-mole)]/55">
         Pick yourself from the list or add a new name.
       </p>
+      {errorMessage && (
+        <p className="mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-salsa-deep)]">
+          server warning · {errorMessage}
+        </p>
+      )}
     </div>
   );
 }

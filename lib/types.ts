@@ -85,29 +85,49 @@ export function toStored(input: Review): StoredReview {
   };
 }
 
+function asString(value: unknown, fallback: string = ""): string {
+  return typeof value === "string" ? value : fallback;
+}
+
+function asNumber(value: unknown, fallback: number = 0): number {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim() !== "") {
+    const n = Number(value);
+    if (Number.isFinite(n)) return n;
+  }
+  return fallback;
+}
+
 export function fromStored(
   data: StoredReview,
   status: ReviewStatus,
 ): Review {
+  // Production Firestore data was written by an older app that didn't enforce
+  // any schema, so coerce every field defensively here. A single doc with a
+  // missing or unexpectedly-typed field would otherwise propagate undefined
+  // through the entire app (and explode in places that call `.trim()` etc.).
   return {
-    id: data.review_id,
-    restaurant: data.name,
-    meal: data.meal,
-    description: data.meal_description ?? "",
-    price: Number(data.price ?? 0),
-    currency: data.currency ?? "GBP",
-    reviewer: data.reviewer,
-    quantity: Number(data.quantity_score ?? 0),
-    taste: Number(data.taste_score ?? 0),
-    atmosphere: Number(data.atmosphere_score ?? 0),
-    overall: Number(data.overall_score ?? 0),
-    comments: data.comments ?? "",
-    date: data.date,
+    id: asString(data.review_id),
+    restaurant: asString(data.name),
+    meal: asString(data.meal),
+    description: asString(data.meal_description),
+    price: asNumber(data.price),
+    currency: asString(data.currency, "GBP"),
+    reviewer: asString(data.reviewer),
+    quantity: asNumber(data.quantity_score),
+    taste: asNumber(data.taste_score),
+    atmosphere: asNumber(data.atmosphere_score),
+    overall: asNumber(data.overall_score),
+    comments: asString(data.comments),
+    date: asString(data.date),
     latitude:
       typeof data.latitude === "number" ? data.latitude : undefined,
     longitude:
       typeof data.longitude === "number" ? data.longitude : undefined,
     status,
-    submittedAt: data.submitted_at ?? new Date().toISOString(),
+    submittedAt:
+      typeof data.submitted_at === "string"
+        ? data.submitted_at
+        : new Date().toISOString(),
   };
 }
