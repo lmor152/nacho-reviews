@@ -278,6 +278,7 @@ body {
     padding: 0.75rem 0.95rem;
     font-family: var(--font-sans);
     font-size: 16px; /* prevents iOS Safari from auto-zooming the page on focus */
+    line-height: 1.4;
     color: var(--color-ink);
     width: 100%;
     min-width: 0;
@@ -288,6 +289,36 @@ body {
 
   textarea.input {
     line-height: 1.45;
+  }
+
+  /* Native date/time inputs leak WebKit chrome past their box on mobile —
+   * disable the platform skin so they respect the .input border, padding,
+   * and rounded corners while keeping the calendar picker functional. */
+  .input[type="date"],
+  .input[type="time"],
+  .input[type="datetime-local"],
+  .input[type="month"] {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    /* Keep the value/placeholder vertically centred. */
+    line-height: 1.4;
+  }
+
+  .input[type="date"]::-webkit-date-and-time-value,
+  .input[type="datetime-local"]::-webkit-date-and-time-value {
+    text-align: left;
+    min-height: 1.4em;
+  }
+
+  .input[type="date"]::-webkit-calendar-picker-indicator,
+  .input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+  .input[type="time"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    margin-left: 0.25rem;
+    /* Tint the icon to match the rest of the form. */
+    filter: invert(13%) sepia(28%) saturate(1100%) hue-rotate(347deg)
+      brightness(40%) contrast(90%);
   }
 
   .input:focus {

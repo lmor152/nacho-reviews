@@ -9,31 +9,51 @@ interface ReviewerPickerProps {
   onChange: (next: string) => void;
 }
 
+interface ReviewersResponse {
+  reviewers?: string[];
+  error?: string;
+}
+
 export function ReviewerPicker({ value, onChange }: ReviewerPickerProps) {
   const [reviewers, setReviewers] = useState<string[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [status, setStatus] = useState<"loading" | "ready" | "error">(
+    "loading",
+  );
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [mode, setMode] = useState<"existing" | "new">("existing");
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch("/api/reviewers");
-        const data = (await res.json()) as { reviewers?: string[] };
+        const res = await fetch("/api/reviewers", { cache: "no-store" });
+        if (!res.ok) {
+          throw new Error(`reviewers ${res.status}`);
+        }
+        const data = (await res.json()) as ReviewersResponse;
         if (cancelled) return;
-        const list = data.reviewers ?? [];
+        const list = Array.isArray(data.reviewers) ? data.reviewers : [];
         setReviewers(list);
-        // If the form already has a value that isn't in the list, treat it as
-        // a new entry. Otherwise default to the existing-name dropdown.
+        if (data.error) setErrorMessage(data.error);
+        // Decide initial mode:
+        //   - if the form already carries a value not in the list → "new"
+        //   - if there are no reviewers yet → "new"
+        //   - otherwise stay on the existing-name dropdown
         if (value && !list.includes(value)) {
           setMode("new");
         } else if (list.length === 0) {
           setMode("new");
+        } else {
+          setMode("existing");
         }
-      } catch {
+        setStatus("ready");
+      } catch (err) {
+        if (cancelled) return;
+        setStatus("error");
         setMode("new");
-      } finally {
-        if (!cancelled) setLoading(false);
+        setErrorMessage(
+          err instanceof Error ? err.message : "lookup failed",
+        );
       }
     })();
     return () => {
@@ -52,15 +72,19 @@ export function ReviewerPicker({ value, onChange }: ReviewerPickerProps) {
     }
   }
 
-  if (loading) {
+  if (status === "loading") {
     return (
-      <div className="input flex items-center text-[var(--color-mole)]/55 mono text-xs">
-        loading reviewers…
+      <div className="flex flex-col gap-1.5">
+        <div className="input flex items-center text-[var(--color-mole)]/55 mono text-xs">
+          loading reviewers…
+        </div>
       </div>
     );
   }
 
-  if (mode === "new" || reviewers.length === 0) {
+  // "new" mode — free-text input, with a way back to the dropdown if any
+  // existing reviewers loaded successfully.
+  if (mode === "new") {
     return (
       <div className="flex flex-col gap-1.5">
         <input
@@ -68,7 +92,7 @@ export function ReviewerPicker({ value, onChange }: ReviewerPickerProps) {
           className="input"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder="Your name (first review)"
+          placeholder="Your name"
           autoComplete="off"
         />
         {reviewers.length > 0 && (
@@ -83,10 +107,18 @@ export function ReviewerPicker({ value, onChange }: ReviewerPickerProps) {
             ← pick an existing reviewer
           </button>
         )}
+        {status === "error" && (
+          <p className="mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-salsa-deep)]">
+            couldn&apos;t load existing reviewers
+            {errorMessage ? ` · ${errorMessage}` : ""}
+          </p>
+        )}
       </div>
     );
   }
 
+  // "existing" mode — dropdown of known reviewers, with a "+ Someone new…"
+  // option at the end to flip to free-text.
   return (
     <div className="flex flex-col gap-1.5">
       <select

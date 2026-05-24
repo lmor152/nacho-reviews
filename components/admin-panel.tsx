@@ -134,7 +134,6 @@ export function AdminPanel({
               className="input"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="default: queso"
             />
           </label>
           {error && (
