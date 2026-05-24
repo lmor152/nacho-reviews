@@ -9,9 +9,19 @@ interface ReviewerPickerProps {
   onChange: (next: string) => void;
 }
 
+interface Diagnostics {
+  docs: number;
+  withReviewer: number;
+  unique: number;
+  sampleReviewerKeys: string[];
+  error: string | null;
+  errorStack?: string;
+  generatedAt: string;
+}
+
 interface ReviewersResponse {
   reviewers?: string[];
-  error?: string;
+  _diag?: Diagnostics;
 }
 
 export function ReviewerPicker({ value, onChange }: ReviewerPickerProps) {
@@ -20,25 +30,29 @@ export function ReviewerPicker({ value, onChange }: ReviewerPickerProps) {
     "loading",
   );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [diag, setDiag] = useState<Diagnostics | null>(null);
   const [mode, setMode] = useState<"existing" | "new">("existing");
+  const [showDiag, setShowDiag] = useState<boolean>(false);
+  const [reloadToken, setReloadToken] = useState<number>(0);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      setStatus("loading");
+      setErrorMessage(null);
+      setDiag(null);
       try {
         const res = await fetch("/api/reviewers", { cache: "no-store" });
         if (!res.ok) {
-          throw new Error(`reviewers ${res.status}`);
+          throw new Error(`reviewers ${res.status} ${res.statusText}`);
         }
         const data = (await res.json()) as ReviewersResponse;
         if (cancelled) return;
         const list = Array.isArray(data.reviewers) ? data.reviewers : [];
         setReviewers(list);
-        if (data.error) setErrorMessage(data.error);
-        // Decide initial mode:
-        //   - if the form already carries a value not in the list → "new"
-        //   - if there are no reviewers yet → "new"
-        //   - otherwise stay on the existing-name dropdown
+        setDiag(data._diag ?? null);
+        if (data._diag?.error) setErrorMessage(data._diag.error);
+
         if (value && !list.includes(value)) {
           setMode("new");
         } else if (list.length === 0) {
@@ -47,6 +61,11 @@ export function ReviewerPicker({ value, onChange }: ReviewerPickerProps) {
           setMode("existing");
         }
         setStatus("ready");
+        // eslint-disable-next-line no-console
+        console.info("[ReviewerPicker] loaded", {
+          listLength: list.length,
+          diag: data._diag,
+        });
       } catch (err) {
         if (cancelled) return;
         setStatus("error");
@@ -54,13 +73,15 @@ export function ReviewerPicker({ value, onChange }: ReviewerPickerProps) {
         setErrorMessage(
           err instanceof Error ? err.message : "lookup failed",
         );
+        // eslint-disable-next-line no-console
+        console.error("[ReviewerPicker] fetch failed", err);
       }
     })();
     return () => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [reloadToken]);
 
   function handleSelectChange(selected: string) {
     if (selected === NEW_VALUE) {
@@ -70,6 +91,49 @@ export function ReviewerPicker({ value, onChange }: ReviewerPickerProps) {
       setMode("existing");
       onChange(selected);
     }
+  }
+
+  function diagFooter() {
+    if (status === "loading") return null;
+    if (!diag && !errorMessage) return null;
+    return (
+      <div className="mt-1 flex flex-col gap-1">
+        <div className="flex flex-wrap items-center gap-2">
+          {errorMessage && (
+            <span className="mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-salsa-deep)]">
+              error · {errorMessage}
+            </span>
+          )}
+          {diag && (
+            <span className="mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-mole)]/55">
+              {diag.docs} docs · {diag.withReviewer} named ·{" "}
+              {diag.unique} unique
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={() => setReloadToken((n) => n + 1)}
+            className="mono text-[10px] uppercase tracking-[0.22em] text-[var(--color-tortilla-deep)] hover:text-[var(--color-salsa)]"
+          >
+            ↻ retry
+          </button>
+          {diag && (
+            <button
+              type="button"
+              onClick={() => setShowDiag((s) => !s)}
+              className="mono text-[10px] uppercase tracking-[0.22em] text-[var(--color-mole)]/55 hover:text-[var(--color-mole)]"
+            >
+              {showDiag ? "hide" : "details"}
+            </button>
+          )}
+        </div>
+        {showDiag && diag && (
+          <pre className="mono text-[10px] leading-snug text-[var(--color-mole)]/70 overflow-x-auto whitespace-pre-wrap break-words rounded-lg border border-dashed border-[var(--color-mole)]/30 bg-[var(--color-cream-light)]/50 p-2">
+{JSON.stringify(diag, null, 2)}
+          </pre>
+        )}
+      </div>
+    );
   }
 
   if (status === "loading") {
@@ -82,8 +146,6 @@ export function ReviewerPicker({ value, onChange }: ReviewerPickerProps) {
     );
   }
 
-  // "new" mode — free-text input, with a way back to the dropdown if any
-  // existing reviewers loaded successfully.
   if (mode === "new") {
     return (
       <div className="flex flex-col gap-1.5">
@@ -107,18 +169,11 @@ export function ReviewerPicker({ value, onChange }: ReviewerPickerProps) {
             ← pick an existing reviewer
           </button>
         )}
-        {status === "error" && (
-          <p className="mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-salsa-deep)]">
-            couldn&apos;t load existing reviewers
-            {errorMessage ? ` · ${errorMessage}` : ""}
-          </p>
-        )}
+        {diagFooter()}
       </div>
     );
   }
 
-  // "existing" mode — dropdown of known reviewers, with a "+ Someone new…"
-  // option at the end to flip to free-text.
   return (
     <div className="flex flex-col gap-1.5">
       <select
@@ -140,11 +195,7 @@ export function ReviewerPicker({ value, onChange }: ReviewerPickerProps) {
       <p className="mono text-[10px] uppercase tracking-[0.22em] text-[var(--color-mole)]/55">
         Pick yourself from the list or add a new name.
       </p>
-      {errorMessage && (
-        <p className="mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-salsa-deep)]">
-          server warning · {errorMessage}
-        </p>
-      )}
+      {diagFooter()}
     </div>
   );
 }
